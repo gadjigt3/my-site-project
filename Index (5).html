@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Крипто-инвестор PRO | Графики + Топ-10</title>
+    <!-- Chart.js CDN (работает при интернете, но можно и без него — просто графики не отрисуются; для школы норм) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: radial-gradient(circle at 20% 30%, #0a0f1e, #03050b);
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            padding: 2rem 1.5rem;
+            color: #eef2ff;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            font-size: 2.4rem;
+            background: linear-gradient(135deg, #F7931A, #FFD166);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .header p {
+            color: #8f9bb5;
+        }
+
+        /* сетка 2 колонки */
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .col {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(18, 25, 45, 0.65);
+            backdrop-filter: blur(6px);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(247, 147, 26, 0.3);
+        }
+        .col h2 {
+            font-size: 1.6rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #F7931A;
+            padding-left: 1rem;
+        }
+        /* калькулятор */
+        .crypto-selector {
+            display: flex;
+            gap: 0.8rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+        .crypto-btn {
+            background: #111927;
+            border: 1px solid #2a3a5a;
+            border-radius: 2rem;
+            padding: 0.6rem 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            flex: 1;
+        }
+        .crypto-btn.active {
+            background: #F7931A;
+            border-color: #F7931A;
+            color: #0a0f1a;
+            box-shadow: 0 0 10px #f7931a80;
+        }
+        .input-group {
+            margin: 1rem 0;
+        }
+        .input-group label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 0.3rem;
+            color: #9aa9c7;
+        }
+        .input-group input {
+            width: 100%;
+            background: #0b1120;
+            border: 1px solid #2a3a60;
+            border-radius: 1.5rem;
+            padding: 0.8rem 1rem;
+            font-size: 1.1rem;
+            color: white;
+        }
+        .result {
+            background: #070c18;
+            border-radius: 1.5rem;
+            padding: 0.8rem;
+            text-align: center;
+            margin-top: 1rem;
+            border-left: 3px solid #F7931A;
+        }
+        .result span {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #FFD966;
+        }
+        .rate-note {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 0.8rem;
+            color: #7f8aa8;
+        }
+
+        /* графики */
+        .chart-container {
+            margin-top: 1rem;
+            background: #0a1020;
+            padding: 1rem;
+            border-radius: 1.5rem;
+        }
+        canvas {
+            max-height: 250px;
+            width: 100%;
+        }
+        .chart-note {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 0.5rem;
+            color: #a0aac9;
+        }
+
+        /* таблица топ-10 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.5rem;
+        }
+        th, td {
+            padding: 0.8rem 0.4rem;
+            text-align: left;
+            border-bottom: 1px solid #202a3f;
+        }
+        th {
+            color: #F7931A;
+        }
+        .coin-link {
+            color: #FFD966;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .coin-link:hover {
+            color: #F7931A;
+            text-decoration: underline;
+        }
+        .ticker {
+            background: #1e2a44;
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-family: monospace;
+        }
+        .reason {
+            font-size: 0.8rem;
+            color: #cbd5f0;
+        }
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.7rem;
+            color: #4b556b;
+            border-top: 1px solid #1e293b;
+            padding-top: 1rem;
+        }
+        @media (max-width: 900px) {
+            body { padding: 1rem; }
+            .two-columns { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📈 CRYPTO DASH PRO</h1>
+        <p>графики цен (год) · конвертер · топ-10 криптовалют с вики-ссылками</p>
+    </div>
+
+    <div class="two-columns">
+        <!-- ЛЕВАЯ КОЛОНКА: калькулятор + график -->
+        <div class="col">
+            <h2>💱 Калькулятор</h2>
+            <div class="crypto-selector" id="cryptoSelector">
+                <div class="crypto-btn active" data-coin="BTC">₿ Bitcoin</div>
+                <div class="crypto-btn" data-coin="ETH">♦️ Ethereum</div>
+                <div class="crypto-btn" data-coin="USDT">💵 USDT</div>
+            </div>
+            <div class="rate-note" id="rateDisplay">1 BTC = 6 000 000 ₽ | 1 ETH = 300 000 ₽ | 1 USDT = 100 ₽</div>
+            <div class="input-group">
+                <label>🔽 Сумма в криптовалюте</label>
+                <input type="number" id="cryptoAmount" placeholder="0.00" step="any" value="0">
+            </div>
+            <div class="input-group">
+                <label>🔼 Сумма в рублях (RUB)</label>
+                <input type="number" id="rubAmount" placeholder="0.00" step="any" value="0">
+            </div>
+            <div class="result">
+                💎 Итого: <span id="conversionResult">0 ₽</span>
+            </div>
+
+            <h2 style="margin-top: 1.8rem;">📊 Динамика цены (за год)</h2>
+            <div class="chart-container">
+                <canvas id="priceChart" width="400" height="200" style="width:100%; height:auto; max-height:250px"></canvas>
+                <div class="chart-note">📌 Наведи на точки — увидишь цену в рублях</div>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА: Топ-10 -->
+        <div class="col">
+            <h2>🏆 Топ‑10 криптовалют для инвестиций</h2>
+            <table id="topTable">
+                <thead>
+                <tr><th>Название</th><th>Тикер</th><th>Почему стоит смотреть</th></tr>
+                </thead>
+                <tbody id="topTableBody">
+                    <!-- заполняется JS -->
+                </tbody>
+            </table>
+            <div class="rate-note" style="margin-top: 1rem;">🔗 Кликни по названию → откроется Википедия</div>
+        </div>
+    </div>
+    <footer>
+        📍 Курсы фиксированные (офлайн-режим) · Данные для проекта Алиева Гаджи, 10 ФМ2, школа №39 им. Астемирова, Махачкала
+    </footer>
+</div>
+
+<script>
+    // ---------- КУРСЫ ----------
+    const RATES = {
+        BTC: 6_000_000,
+        ETH: 300_000,
+        USDT: 100
+    };
+
+    // ---------- ДАННЫЕ ДЛЯ ГРАФИКОВ (последние 12 месяцев, цена в рублях) ----------
+    // Для BTC, ETH, USDT (USDT почти прямая)
+    const chartData = {
+        BTC: [5200000, 5300000, 5600000, 5800000, 6100000, 6400000, 6600000, 6800000, 6500000, 6200000, 6000000, 6000000],
+        ETH: [260000, 270000, 285000, 310000, 330000, 350000, 365000, 370000, 350000, 330000, 310000, 300000],
+        USDT: [99, 100, 100, 100, 101, 100, 100, 99, 100, 100, 100, 100]
+    };
+    const months = ['Май 25', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек', 'Янв 26', 'Фев', 'Мар', 'Апр'];
+
+    let activeCoin = 'BTC';
+    let priceChart = null; // объект Chart.js
+
+    // ---------- ТОП-10 с ссылками на вики ----------
+    const TOP_CRYPTO = [
+        { name: "Bitcoin", ticker: "BTC", wiki: "https://ru.wikipedia.org/wiki/Bitcoin", reason: "Цифровое золото, ликвидность №1, халвинг уменьшает эмиссию." },
+        { name: "Ethereum", ticker: "ETH", wiki: "https://ru.wikipedia.org/wiki/Ethereum", reason: "Смарт-контракты, DeFi, переход на PoS — экологичнее." },
+        { name: "BNB", ticker: "BNB", wiki: "https://ru.wikipedia.org/wiki/Binance_Coin", reason: "Экосистема Binance, сжигание монет, низкие комиссии." },
+        { name: "Solana", ticker: "SOL", wiki: "https://ru.wikipedia.org/wiki/Solana", reason: "Высокая скорость (65k TPS), дешёвые транзакции, активный NFT." },
+        { name: "XRP", ticker: "XRP", wiki: "https://ru.wikipedia.org/wiki/Ripple_(платёжный_протокол)", reason: "Ориентация на банки и трансграничные платежи." },
+        { name: "Cardano", ticker: "ADA", wiki: "https://ru.wikipedia.org/wiki/Cardano", reason: "Научный подход, энергоэффективность, развитие смарт-контрактов." },
+        { name: "Dogecoin", ticker: "DOGE", wiki: "https://ru.wikipedia.org/wiki/Dogecoin", reason: "Мем-монета с большим сообществом, поддержка Маска." },
+        { name: "Polkadot", ticker: "DOT", wiki: "https://ru.wikipedia.org/wiki/Polkadot", reason: "Связь разных блокчейнов (парачейны), сильная команда." },
+        { name: "Avalanche", ticker: "AVAX", wiki: "https://ru.wikipedia.org/wiki/Avalanche_(криптовалюта)", reason: "Быстрые субсети, совместимость с Ethereum, растущая DeFi." },
+        { name: "Chainlink", ticker: "LINK", wiki: "https://ru.wikipedia.org/wiki/Chainlink", reason: "Оракулы для реальных данных — критично для DeFi." }
+    ];
+
+    // отрисовка таблицы с кликабельными ссылками
+    function renderTopTable() {
+        const tbody = document.getElementById('topTableBody');
+        tbody.innerHTML = '';
+        TOP_CRYPTO.forEach(item => {
+            const row = tbody.insertRow();
+            // Название - ссылка на вики, открывается в новой вкладке
+            const nameCell = row.insertCell(0);
+            const link = document.createElement('a');
+            link.href = item.wiki;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.className = 'coin-link';
+            link.innerText = item.name;
+            nameCell.appendChild(link);
+            // Тикер
+            const tickerCell = row.insertCell(1);
+            tickerCell.innerHTML = `<span class="ticker">${item.ticker}</span>`;
+            // Обоснование
+            const reasonCell = row.insertCell(2);
+            reasonCell.innerHTML = `<div class="reason">${item.reason}</div>`;
+        });
+    }
+
+    // обновить отображение курсов
+    function updateRateDisplay() {
+        const div = document.getElementById('rateDisplay');
+        div.innerHTML = `1 BTC = ${RATES.BTC.toLocaleString('ru-RU')} ₽ | 1 ETH = ${RATES.ETH.toLocaleString('ru-RU')} ₽ | 1 USDT = ${RATES.USDT} ₽`;
+    }
+
+    // ---------- КАЛЬКУЛЯТОР ----------
+    let updating = false;
+    const cryptoInput = document.getElementById('cryptoAmount');
+    const rubInput = document.getElementById('rubAmount');
+    const resultSpan = document.getElementById('conversionResult');
+
+    function convertFromCrypto() {
+        if (updating) return;
+        updating = true;
+        let cryptoVal = parseFloat(cryptoInput.value) || 0;
+        const rubles = cryptoVal * RATES[activeCoin];
+        rubInput.value = rubles.toFixed(2);
+        resultSpan.innerText = rubles.toLocaleString('ru-RU') + ' ₽';
+        updating = false;
+    }
+    function convertFromRub() {
+        if (updating) return;
+        updating = true;
+        let rubVal = parseFloat(rubInput.value) || 0;
+        const cryptoAmount = rubVal / RATES[activeCoin];
+        cryptoInput.value = cryptoAmount.toFixed(8);
+        resultSpan.innerText = rubVal.toLocaleString('ru-RU') + ' ₽';
+        updating = false;
+    }
+    cryptoInput.addEventListener('input', convertFromCrypto);
+    rubInput.addEventListener('input', convertFromRub);
+
+    // смена активной монеты (и обновление графика)
+    function setActiveCoin(coin) {
+        activeCoin = coin;
+        document.querySelectorAll('.crypto-btn').forEach(btn => {
+            if (btn.getAttribute('data-coin') === coin) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        // пересчитать из текущего рублевого поля
+        const currentRub = parseFloat(rubInput.value) || 0;
+        const newCrypto = currentRub / RATES[activeCoin];
+        cryptoInput.value = newCrypto.toFixed(8);
+        resultSpan.innerText = currentRub.toLocaleString('ru-RU') + ' ₽';
+        // обновить график
+        updateChart(coin);
+    }
+
+    // ---------- ГРАФИК (Chart.js) ----------
+    function updateChart(coin) {
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        const prices = chartData[coin];
+        if (!prices) return;
+
+        if (priceChart) {
+            priceChart.destroy();
+        }
+        priceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: `Цена ${coin} в рублях`,
+                    data: prices,
+                    borderColor: '#F7931A',
+                    backgroundColor: 'rgba(247, 147, 26, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#FFD966',
+                    pointBorderColor: '#fff',
+                    tension: 0.2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let value = context.raw;
+                                return `💰 ${value.toLocaleString('ru-RU')} ₽`;
+                            }
+                        },
+                        backgroundColor: '#111927',
+                        titleColor: '#F7931A',
+                        bodyColor: '#eef2ff'
+                    },
+                    legend: { labels: { color: '#cbd5f0' } }
+                },
+                scales: {
+                    y: {
+                        ticks: { color: '#b9c7e0', callback: (val) => val.toLocaleString('ru-RU') + ' ₽' },
+                        grid: { color: '#2a3455' }
+                    },
+                    x: { ticks: { color: '#b9c7e0', maxRotation: 45, minRotation: 30 } }
+                }
+            }
+        });
+    }
+
+    // обработчики кнопок выбора крипты
+    document.querySelectorAll('.crypto-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const coin = btn.getAttribute('data-coin');
+            setActiveCoin(coin);
+        });
+    });
+
+    // инициализация
+    renderTopTable();
+    updateRateDisplay();
+    setActiveCoin('BTC');
+    // начальный пересчёт
+    cryptoInput.value = 0;
+    rubInput.value = 0;
+    resultSpan.innerText = '0 ₽';
+</script>
+</body>
+</html>
